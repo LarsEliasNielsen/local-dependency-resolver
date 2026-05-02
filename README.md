@@ -32,12 +32,9 @@ configured roots and reading each folder's `git remote.origin.url`.
 In Claude Code, add the marketplace and install the plugin:
 
 ```
-/plugin marketplace add git@github.com:LarsEliasNielsen/local-dependency-resolver.git
+/plugin marketplace add https://github.com/LarsEliasNielsen/local-dependency-resolver.git
 /plugin install local-dependency-resolver@local-dependency-resolver
 ```
-
-The first `<…>` is `local-dependency-resolver` (the marketplace `name`); the
-second is the plugin name within it — they happen to be identical.
 
 To update later:
 
@@ -53,7 +50,11 @@ Open `paths.config.json`, which lives next to the generator script inside the
 installed plugin:
 
 ```
-%USERPROFILE%\.claude\plugins\<...>\resolve-local-maven-dependency\paths.config.json
+# Windows
+%USERPROFILE%\.claude\plugins\marketplaces\local-dependency-resolver\plugins\local-dependency-resolver\skills\resolve-local-maven-dependency\paths.config.json
+
+# Unix / macOS
+~/.claude/plugins/marketplaces/local-dependency-resolver/plugins/local-dependency-resolver/skills/resolve-local-maven-dependency/paths.config.json
 ```
 
 It contains a JSON array of paths to scan:
@@ -110,10 +111,10 @@ Override per-run with `--output <path>` if you want it elsewhere.
 
 ## Usage
 
-Once your projects root is configured (see above), the skill triggers
+Once your project roots are configured (see above), the skill triggers
 automatically. When you ask Claude something that involves a Maven dependency
 whose source is also checked out locally, Claude will resolve it and
-read/edit files in the corresponding sibling folder.
+read/edit files in the corresponding local folder.
 
 On the first invocation after install, the lookup table
 (`local-dependencies.md`) does not exist yet, so the skill generates it by
@@ -129,11 +130,14 @@ After that, the skill regenerates the table only when:
 
 ## Manually refreshing the table
 
-You can also run the generator script directly. The script is bundled inside
-the installed plugin; on Windows, the path will look something like:
+You can also run the generator script directly. The script is bundled inside the installed plugin:
 
 ```
-%USERPROFILE%\.claude\plugins\<...>\local-dependency-resolver\skills\resolve-local-maven-dependency\generate-local-dependency-resolver.py
+# Windows
+%USERPROFILE%\.claude\plugins\marketplaces\local-dependency-resolver\plugins\local-dependency-resolver\skills\resolve-local-maven-dependency\generate-local-dependency-resolver.py
+
+# Unix / macOS
+~/.claude/plugins/marketplaces/local-dependency-resolver/plugins/local-dependency-resolver/skills/resolve-local-maven-dependency/generate-local-dependency-resolver.py
 ```
 
 Run it with:

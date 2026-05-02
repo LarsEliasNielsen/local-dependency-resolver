@@ -137,6 +137,12 @@ def main() -> None:
     parser.add_argument("--output", default=DEFAULT_OUTPUT, help="Output markdown file (overwritten each run)")
     args = parser.parse_args()
 
+    if not os.path.isdir(args.root):
+        sys.exit(
+            f"error: projects root not found: {args.root}\n"
+            f"Set LOCAL_DEPENDENCY_RESOLVER_ROOT or pass --root <path>."
+        )
+
     projects = collect_projects(args.root)
     content = render_markdown(projects, args.root)
 

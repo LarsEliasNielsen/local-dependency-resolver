@@ -91,7 +91,7 @@ def collect_projects(root_dir: str) -> list[dict[str, Optional[str]]]:
         if not os.path.isfile(pom_path):
             continue
         info = parse_pom(pom_path)
-        if not info or not info["artifactId"]:
+        if not info or not info["groupId"] or not info["artifactId"]:
             continue
         info["dir"] = entry
         info["remote"] = get_git_remote(project_path)

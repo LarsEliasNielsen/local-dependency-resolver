@@ -1,0 +1,13 @@
+# User-specific output of the generator script — regenerated per machine
+plugins/local-dependency-resolver/skills/resolve-local-maven-dependency/local-dependencies.md
+
+# OS / IDE
+Thumbs.db
+.DS_Store
+.idea/
+.vscode/
+*.iml
+
+# Python
+__pycache__/
+*.py[cod]

@@ -1,0 +1,14 @@
+{
+  "name": "local-dependency-resolver",
+  "owner": {
+    "name": "Lars Nielsen"
+  },
+  "description": "Claude Code plugin marketplace hosting the local-dependency-resolver plugin for Maven projects.",
+  "plugins": [
+    {
+      "name": "local-dependency-resolver",
+      "source": "./plugins/local-dependency-resolver",
+      "description": "Resolves Maven dependencies (groupId/artifactId) to local source checkouts under the user's projects root (~/projects by default) so Claude can read and edit dependency code directly."
+    }
+  ]
+}

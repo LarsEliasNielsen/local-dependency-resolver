@@ -183,9 +183,12 @@ def main() -> None:
     config_path = os.path.join(script_dir, CONFIG_FILENAME)
     default_output = os.path.join(script_dir, "local-dependencies.md")
 
-    roots = load_roots(config_path)
-
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    parser.add_argument(
+        "--config",
+        default=None,
+        help="Path to paths.config.json. Defaults to the file next to this script.",
+    )
     parser.add_argument(
         "--root",
         default=None,
@@ -193,6 +196,11 @@ def main() -> None:
     )
     parser.add_argument("--output", default=default_output, help="Output markdown file (overwritten each run)")
     args = parser.parse_args()
+
+    if args.config is not None:
+        config_path = str(Path(os.path.expandvars(args.config)).expanduser())
+
+    roots = load_roots(config_path)
 
     if args.root is not None:
         roots = [str(Path(os.path.expandvars(args.root)).expanduser())]

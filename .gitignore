@@ -1,6 +1,9 @@
 # User-specific output of the generator script — regenerated per machine
 plugins/local-dependency-resolver/skills/resolve-local-maven-dependency/local-dependencies.md
 
+# Claude Code local settings
+.claude/
+
 # OS / IDE
 Thumbs.db
 .DS_Store

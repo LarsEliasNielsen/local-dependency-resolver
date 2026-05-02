@@ -3,10 +3,14 @@
 coordinates (groupId/artifactId) and Git remote URL.
 
 Used by the `resolve-local-maven-dependency` skill to look up which Maven
-dependencies are available as local checkouts under a projects root.
+dependencies are available as local checkouts under configured project roots.
 
-Scans every immediate subdirectory of the root for a top-level pom.xml.
-Folders without a pom.xml are skipped. Overwrites the output file on each run.
+Scans every immediate subdirectory of each root for a top-level pom.xml.
+Folders without a pom.xml or with unresolvable coordinates are skipped.
+Missing root paths are silently ignored. Overwrites the output file on each run.
+
+Configure root paths in paths.config.json next to this script. Defaults to
+~/projects and ~/Documents/Projects if no config file is found.
 
 Usage:
     python generate-local-dependency-resolver.py
@@ -16,6 +20,7 @@ Usage:
 from __future__ import annotations
 
 import argparse
+import json
 import os
 import subprocess
 import sys
@@ -26,7 +31,28 @@ from typing import Optional
 
 POM_NS = "{http://maven.apache.org/POM/4.0.0}"
 
-DEFAULT_ROOT = os.environ.get("LOCAL_DEPENDENCY_RESOLVER_ROOT") or str(Path.home() / "projects")
+CONFIG_FILENAME = "paths.config.json"
+DEFAULT_ROOTS = [
+    str(Path.home() / "projects"),
+    str(Path.home() / "Documents" / "Projects"),
+]
+
+
+def load_roots(config_path: str) -> list[str]:
+    """Load and expand root paths from the JSON config file.
+
+    Falls back to DEFAULT_ROOTS if the file is missing or malformed.
+    Expands both ~ (home dir) and environment variables in each path.
+    """
+    try:
+        with open(config_path, encoding="utf-8") as f:
+            data = json.load(f)
+        roots = data.get("roots", [])
+        if isinstance(roots, list) and roots:
+            return [str(Path(os.path.expandvars(r)).expanduser()) for r in roots]
+    except (FileNotFoundError, json.JSONDecodeError, OSError):
+        pass
+    return [str(Path(os.path.expandvars(r)).expanduser()) for r in DEFAULT_ROOTS]
 
 
 def find_child(element: ET.Element, tag: str) -> Optional[ET.Element]:
@@ -81,38 +107,48 @@ def get_git_remote(project_path: str) -> Optional[str]:
         return None
 
 
-def collect_projects(root_dir: str) -> list[dict[str, Optional[str]]]:
-    """Scan root_dir for immediate subdirectories that contain a top-level pom.xml.
+def collect_projects(roots: list[str]) -> list[dict[str, Optional[str]]]:
+    """Scan each root for immediate subdirectories containing a top-level pom.xml.
 
-    Returns a list of dicts with keys: dir, groupId, artifactId, packaging, remote.
-    Folders without a pom.xml or with unresolvable Maven coordinates are skipped.
+    Missing roots are silently skipped. Duplicate project paths (same directory
+    reached via multiple roots) are included only once. Returns a list of dicts
+    with keys: path, groupId, artifactId, packaging, remote. Sorted by path.
     """
     projects = []
-    for entry in sorted(os.listdir(root_dir)):
-        project_path = os.path.join(root_dir, entry)
-        pom_path = os.path.join(project_path, "pom.xml")
-        if not os.path.isfile(pom_path):
+    seen_paths: set[str] = set()
+    for root_dir in roots:
+        if not os.path.isdir(root_dir):
             continue
-        info = parse_pom(pom_path)
-        if not info or not info["groupId"] or not info["artifactId"]:
-            continue
-        info["dir"] = entry
-        info["remote"] = get_git_remote(project_path)
-        projects.append(info)
+        for entry in sorted(os.listdir(root_dir)):
+            project_path = os.path.normpath(os.path.join(root_dir, entry))
+            if project_path in seen_paths:
+                continue
+            seen_paths.add(project_path)
+            pom_path = os.path.join(project_path, "pom.xml")
+            if not os.path.isfile(pom_path):
+                continue
+            info = parse_pom(pom_path)
+            if not info or not info["groupId"] or not info["artifactId"]:
+                continue
+            info["path"] = project_path
+            info["remote"] = get_git_remote(project_path)
+            projects.append(info)
+    projects.sort(key=lambda p: p["path"])
     return projects
 
 
-def render_markdown(projects: list[dict[str, Optional[str]]], root_dir: str, script_path: str) -> str:
+def render_markdown(projects: list[dict[str, Optional[str]]], active_roots: list[str], script_path: str) -> str:
     """Render the dependency lookup table as a Markdown string.
 
-    Includes a timestamped header recording root_dir and script_path so the
-    skill can check staleness and regenerate when needed.
+    Includes a timestamped header recording the scanned roots so the skill
+    can check staleness and regenerate when needed.
     """
     timestamp = datetime.now().astimezone().strftime("%Y-%m-%d %H:%M:%S %Z")
+    scanned = ", ".join(f"`{r}`" for r in active_roots)
     lines = [
         "# Local Maven Dependencies",
         "",
-        f"_Generated {timestamp} from `pom.xml` files under `{root_dir}`._",
+        f"_Generated {timestamp}. Scanned roots: {scanned}._",
         "",
         "> This file is auto-generated by the `resolve-local-maven-dependency` skill.",
         "> To refresh it after adding or removing projects, run:",
@@ -120,16 +156,17 @@ def render_markdown(projects: list[dict[str, Optional[str]]], root_dir: str, scr
         f"> python {script_path}",
         "> ```",
         "> The script overwrites this file on each run.",
+        "> To configure which roots are scanned, edit `paths.config.json` in this directory.",
         "",
         f"Found **{len(projects)}** Java projects.",
         "",
-        "| Folder | `groupId` | `artifactId` | Packaging | Git remote |",
+        "| Path | `groupId` | `artifactId` | Packaging | Git remote |",
         "|---|---|---|---|---|",
     ]
     for p in projects:
         remote = f"`{p['remote']}`" if p["remote"] else "_(no remote)_"
         lines.append(
-            f"| `{p['dir']}/` "
+            f"| `{p['path']}` "
             f"| `{p['groupId']}` "
             f"| `{p['artifactId']}` "
             f"| {p['packaging']} "
@@ -142,21 +179,27 @@ def render_markdown(projects: list[dict[str, Optional[str]]], root_dir: str, scr
 def main() -> None:
     """Parse CLI arguments, collect projects, render the table, and write the output file."""
     script_path = os.path.abspath(__file__)
-    default_output = os.path.join(os.path.dirname(script_path), "local-dependencies.md")
+    script_dir = os.path.dirname(script_path)
+    config_path = os.path.join(script_dir, CONFIG_FILENAME)
+    default_output = os.path.join(script_dir, "local-dependencies.md")
+
+    roots = load_roots(config_path)
 
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument("--root", default=DEFAULT_ROOT, help=f"Directory to scan (default: {DEFAULT_ROOT})")
+    parser.add_argument(
+        "--root",
+        default=None,
+        help="Scan a single directory, overriding paths.config.json for this run.",
+    )
     parser.add_argument("--output", default=default_output, help="Output markdown file (overwritten each run)")
     args = parser.parse_args()
 
-    if not os.path.isdir(args.root):
-        sys.exit(
-            f"error: projects root not found: {args.root}\n"
-            f"Set LOCAL_DEPENDENCY_RESOLVER_ROOT or pass --root <path>."
-        )
+    if args.root is not None:
+        roots = [str(Path(os.path.expandvars(args.root)).expanduser())]
 
-    projects = collect_projects(args.root)
-    content = render_markdown(projects, args.root, script_path)
+    active_roots = [r for r in roots if os.path.isdir(r)]
+    projects = collect_projects(roots)
+    content = render_markdown(projects, active_roots, script_path)
 
     with open(args.output, "w", encoding="utf-8") as f:
         f.write(content)

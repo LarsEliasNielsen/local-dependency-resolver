@@ -1,6 +1,6 @@
 {
   "name": "local-dependency-resolver",
-  "description": "Resolves Maven dependencies (groupId/artifactId) to local source checkouts under the user's configured projects root (~/projects by default, overridable via LOCAL_DEPENDENCY_RESOLVER_ROOT) so Claude can read and edit dependency code directly instead of inspecting JARs.",
+  "description": "Resolves Maven dependencies (groupId/artifactId) to local source checkouts. Scans one or more project roots configured in paths.config.json (defaults to ~/projects and ~/Documents/Projects) so Claude can read and edit dependency code directly instead of inspecting JARs.",
   "version": "1.0.0",
   "author": {
     "name": "Lars Nielsen"

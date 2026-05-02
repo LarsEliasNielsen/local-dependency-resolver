@@ -144,7 +144,7 @@ def render_markdown(projects: list[dict[str, Optional[str]]], active_roots: list
     can check staleness and regenerate when needed.
     """
     timestamp = datetime.now().astimezone().strftime("%Y-%m-%d %H:%M:%S %Z")
-    scanned = ", ".join(f"`{r}`" for r in active_roots)
+    scanned = ", ".join(f"`{r}`" for r in active_roots) or "_(none found)_"
     lines = [
         "# Local Maven Dependencies",
         "",

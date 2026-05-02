@@ -70,6 +70,7 @@ def parse_pom(pom_path: str) -> Optional[dict[str, Optional[str]]]:
 
 
 def get_git_remote(project_path: str) -> Optional[str]:
+    """Return the git remote.origin.url for the repo at project_path, or None if unavailable."""
     try:
         return subprocess.check_output(
             ["git", "-C", project_path, "config", "--get", "remote.origin.url"],
@@ -81,6 +82,11 @@ def get_git_remote(project_path: str) -> Optional[str]:
 
 
 def collect_projects(root_dir: str) -> list[dict[str, Optional[str]]]:
+    """Scan root_dir for immediate subdirectories that contain a top-level pom.xml.
+
+    Returns a list of dicts with keys: dir, groupId, artifactId, packaging, remote.
+    Folders without a pom.xml or with unresolvable Maven coordinates are skipped.
+    """
     projects = []
     for entry in sorted(os.listdir(root_dir)):
         project_path = os.path.join(root_dir, entry)
@@ -97,6 +103,11 @@ def collect_projects(root_dir: str) -> list[dict[str, Optional[str]]]:
 
 
 def render_markdown(projects: list[dict[str, Optional[str]]], root_dir: str, script_path: str) -> str:
+    """Render the dependency lookup table as a Markdown string.
+
+    Includes a timestamped header recording root_dir and script_path so the
+    skill can check staleness and regenerate when needed.
+    """
     timestamp = datetime.now().astimezone().strftime("%Y-%m-%d %H:%M:%S %Z")
     lines = [
         "# Local Maven Dependencies",
@@ -129,6 +140,7 @@ def render_markdown(projects: list[dict[str, Optional[str]]], root_dir: str, scr
 
 
 def main() -> None:
+    """Parse CLI arguments, collect projects, render the table, and write the output file."""
     script_path = os.path.abspath(__file__)
     default_output = os.path.join(os.path.dirname(script_path), "local-dependencies.md")
 

@@ -67,6 +67,22 @@ Unix). The defaults cover the most common locations on both Windows and
 Unix/Mac. **Missing paths are silently skipped**, so it's safe to include
 paths that may not exist on every machine.
 
+**Windows paths** — use forward slashes (easiest) or JSON-escaped backslashes.
+Both forms are valid JSON and work on Windows:
+
+```json
+{
+  "roots": [
+    "C:/Users/lars/Documents/Projects",
+    "C:\\Users\\lars\\Documents\\Projects"
+  ]
+}
+```
+
+Do **not** paste raw Windows paths directly — backslashes must be escaped in
+JSON (`\\`) or replaced with forward slashes. If the file contains invalid JSON
+the script prints a warning and falls back to the default roots.
+
 After editing, regenerate the lookup table for the changes to take effect:
 
 ```
@@ -122,7 +138,9 @@ To change that threshold, edit the value in the installed `SKILL.md`
 
 ### Output file location
 
-By default, `local-dependencies.md` is written next to the generator script.
+By default, the table is written to
+`~/.claude/local-dependency-resolver-dependencies.md` — alongside the config
+file, so it persists across plugin updates and cache refreshes.
 Override per-run with `--output <path>` if you want it elsewhere.
 
 ## Usage
@@ -133,8 +151,8 @@ whose source is also checked out locally, Claude will resolve it and
 read/edit files in the corresponding local folder, subject to your approval via Claude Code's normal permission prompts.
 
 On the first invocation after install, the lookup table
-(`local-dependencies.md`) does not exist yet, so the skill generates it by
-running its bundled Python script. This usually takes a couple of seconds for
+(`~/.claude/local-dependency-resolver-dependencies.md`) does not exist yet,
+so the skill generates it by running its bundled Python script. This usually takes a couple of seconds for
 ~50 projects.
 
 After that, the skill regenerates the table only when:
@@ -162,10 +180,10 @@ Run it with:
 python "<path-to-script>"
 ```
 
-It rewrites `local-dependencies.md` next to itself, reading roots from
-`~/.claude/local-dependency-resolver-config.json` automatically. Pass
-`--root <other-dir>` to override all configured roots for a single run, or
-`--output <other-file>` to write the table elsewhere.
+It writes to `~/.claude/local-dependency-resolver-dependencies.md`, reading
+roots from `~/.claude/local-dependency-resolver-config.json` automatically.
+Pass `--root <other-dir>` to override all configured roots for a single run,
+or `--output <other-file>` to write the table elsewhere.
 
 ## Repository layout
 
@@ -185,5 +203,5 @@ It rewrites `local-dependencies.md` next to itself, reading roots from
 └── .gitignore
 ```
 
-The generated `local-dependencies.md` is intentionally **not** committed —
-it's user-specific and regenerated per machine on first use.
+The generated table (`~/.claude/local-dependency-resolver-dependencies.md`)
+lives outside the repo — it is user-specific and regenerated per machine.

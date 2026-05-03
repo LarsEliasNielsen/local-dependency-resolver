@@ -55,7 +55,7 @@ can be read and edited directly.
 ## How to use
 
 1. **Check freshness first.** Read the top ~10 lines of
-   `local-dependencies.md` in this skill's directory and find the line:
+   `~/.claude/local-dependency-resolver-dependencies.md` and find the line:
    `_Generated YYYY-MM-DD HH:MM:SS <tz>. Scanned roots: ..._`.
    Compare that date to today. Regenerate the table before continuing if any
    of these are true:
@@ -72,7 +72,7 @@ can be read and edited directly.
    ```
    The script reads `~/.claude/local-dependency-resolver-config.json` for roots, reparses every top-level
    `pom.xml` in each root's immediate subdirectories, reads each folder's
-   `git remote.origin.url`, and overwrites `local-dependencies.md`.
+   `git remote.origin.url`, and overwrites `~/.claude/local-dependency-resolver-dependencies.md`.
 
 2. **Look up the dependency** in the table. It has one row per Java project
    found across all configured roots, with columns: Path, groupId, artifactId,

@@ -13,9 +13,13 @@ Configure root paths in ~/.claude/local-dependency-resolver-config.json.
 Falls back to paths.config.json next to this script for development use.
 Defaults to ~/projects and ~/Documents/Projects if no config file is found.
 
+Writes output to ~/.claude/local-dependency-resolver-dependencies.md by default.
+Override with --output.
+
 Usage:
     python generate-local-dependency-resolver.py
     python generate-local-dependency-resolver.py --root ~/code
+    python generate-local-dependency-resolver.py --output /tmp/deps.md
 """
 
 from __future__ import annotations
@@ -34,6 +38,7 @@ POM_NS = "{http://maven.apache.org/POM/4.0.0}"
 
 CONFIG_FILENAME = "paths.config.json"
 USER_CONFIG_PATH = Path.home() / ".claude" / "local-dependency-resolver-config.json"
+USER_OUTPUT_PATH = Path.home() / ".claude" / "local-dependency-resolver-dependencies.md"
 DEFAULT_ROOTS = [
     str(Path.home() / "projects"),
     str(Path.home() / "Documents" / "Projects"),
@@ -192,7 +197,7 @@ def main() -> None:
     """Parse CLI arguments, collect projects, render the table, and write the output file."""
     script_path = os.path.abspath(__file__)
     script_dir = os.path.dirname(script_path)
-    default_output = os.path.join(script_dir, "local-dependencies.md")
+    default_output = str(USER_OUTPUT_PATH)
 
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument(

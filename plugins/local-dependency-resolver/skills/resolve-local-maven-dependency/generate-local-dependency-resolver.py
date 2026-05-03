@@ -45,6 +45,8 @@ def load_roots(config_path: str) -> list[str]:
 
     Falls back to DEFAULT_ROOTS if the file is missing or malformed.
     Expands both ~ (home dir) and environment variables in each path.
+    Accepts forward slashes or JSON-escaped backslashes (e.g. C:/Users/foo
+    or C:\\\\Users\\\\foo) — both are valid JSON and work on Windows.
     """
     try:
         with open(config_path, encoding="utf-8") as f:
@@ -52,7 +54,15 @@ def load_roots(config_path: str) -> list[str]:
         roots = data.get("roots", [])
         if isinstance(roots, list) and roots:
             return [str(Path(os.path.expandvars(r)).expanduser()) for r in roots]
-    except (FileNotFoundError, json.JSONDecodeError, OSError):
+    except json.JSONDecodeError as exc:
+        print(
+            f"Warning: {config_path} contains invalid JSON ({exc}).\n"
+            "  On Windows use forward slashes (C:/Users/foo/Projects) or\n"
+            "  JSON-escaped backslashes (C:\\\\Users\\\\foo\\\\Projects).\n"
+            "  Falling back to default roots.",
+            file=sys.stderr,
+        )
+    except (FileNotFoundError, OSError):
         pass
     return [str(Path(os.path.expandvars(r)).expanduser()) for r in DEFAULT_ROOTS]
 

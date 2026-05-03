@@ -27,9 +27,25 @@ A minimal config looks like:
 }
 ```
 
-Paths support `~` (home directory) and environment variables (e.g.
+**Windows paths** — use forward slashes (easiest, no escaping needed) or
+JSON-escaped backslashes. Both forms are valid:
+
+```json
+{
+  "roots": [
+    "C:/Users/lars/Documents/Projects",
+    "C:\\Users\\lars\\Documents\\Projects"
+  ]
+}
+```
+
+Do **not** paste raw Windows paths (`C:\Users\...`) directly — backslashes
+must be escaped in JSON or replaced with forward slashes.
+
+Paths also support `~` (home directory) and environment variables (e.g.
 `%USERPROFILE%` on Windows, `$HOME` on Unix). Missing paths are silently
-skipped at generation time.
+skipped at generation time. If the config file contains invalid JSON the
+script prints a warning and falls back to the default roots.
 
 When a task in one project references a Maven dependency, that dependency's
 source code may be available locally as a folder under one of the configured

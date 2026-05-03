@@ -1,7 +1,7 @@
 {
   "name": "local-dependency-resolver",
   "description": "Resolves Maven dependencies (groupId/artifactId) to local source checkouts. Scans project roots configured in ~/.claude/local-dependency-resolver-config.json so Claude can read and edit dependency code directly instead of inspecting JARs.",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "author": {
     "name": "Lars Nielsen"
   }

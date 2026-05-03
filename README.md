@@ -49,17 +49,7 @@ To update later:
 
 ### Project roots
 
-Open `paths.config.json`, which lives next to the generator script inside the
-installed plugin:
-
-```
-# Windows
-%USERPROFILE%\.claude\plugins\marketplaces\local-dependency-resolver\plugins\local-dependency-resolver\skills\resolve-local-maven-dependency\paths.config.json
-
-# Unix / macOS
-~/.claude/plugins/marketplaces/local-dependency-resolver/plugins/local-dependency-resolver/skills/resolve-local-maven-dependency/paths.config.json
-```
-
+Create or edit `~/.claude/local-dependency-resolver-config.json`.
 It contains a JSON array of paths to scan:
 
 ```json
@@ -90,6 +80,29 @@ To override all configured roots for a single run:
 
 ```
 python "<path-to-script>" --root D:\dev
+```
+
+### Upgrading from an earlier version
+
+If you previously edited `paths.config.json` inside the installed plugin,
+copy it to the new stable location once:
+
+**Windows PowerShell:**
+```powershell
+Copy-Item "$env:USERPROFILE\.claude\plugins\marketplaces\local-dependency-resolver\plugins\local-dependency-resolver\skills\resolve-local-maven-dependency\paths.config.json" `
+          "$env:USERPROFILE\.claude\local-dependency-resolver-config.json"
+```
+
+**Unix / macOS:**
+```bash
+cp ~/.claude/plugins/marketplaces/local-dependency-resolver/plugins/local-dependency-resolver/skills/resolve-local-maven-dependency/paths.config.json \
+   ~/.claude/local-dependency-resolver-config.json
+```
+
+Then refresh the plugin cache so the updated script is picked up:
+
+```
+/plugin marketplace update
 ```
 
 ### Python interpreter
@@ -149,10 +162,10 @@ Run it with:
 python "<path-to-script>"
 ```
 
-It rewrites `local-dependencies.md` next to itself, scanning whichever roots
-are listed in `paths.config.json`. Pass `--root <other-dir>` to override all
-configured roots for a single run, or `--output <other-file>` to write the
-table elsewhere.
+It rewrites `local-dependencies.md` next to itself, reading roots from
+`~/.claude/local-dependency-resolver-config.json` automatically. Pass
+`--root <other-dir>` to override all configured roots for a single run, or
+`--output <other-file>` to write the table elsewhere.
 
 ## Repository layout
 
@@ -168,7 +181,7 @@ table elsewhere.
 │           └── resolve-local-maven-dependency/
 │               ├── SKILL.md                   # skill description + instructions
 │               ├── generate-local-dependency-resolver.py
-│               └── paths.config.json          # user-editable list of project roots
+│               └── paths.config.json          # built-in fallback defaults (overridden by ~/.claude/local-dependency-resolver-config.json)
 └── .gitignore
 ```
 

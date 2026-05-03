@@ -9,8 +9,9 @@ Scans every immediate subdirectory of each root for a top-level pom.xml.
 Folders without a pom.xml or with unresolvable coordinates are skipped.
 Missing root paths are silently ignored. Overwrites the output file on each run.
 
-Configure root paths in paths.config.json next to this script. Defaults to
-~/projects and ~/Documents/Projects if no config file is found.
+Configure root paths in ~/.claude/local-dependency-resolver-config.json.
+Falls back to paths.config.json next to this script for development use.
+Defaults to ~/projects and ~/Documents/Projects if no config file is found.
 
 Usage:
     python generate-local-dependency-resolver.py
@@ -32,6 +33,7 @@ from typing import Optional
 POM_NS = "{http://maven.apache.org/POM/4.0.0}"
 
 CONFIG_FILENAME = "paths.config.json"
+USER_CONFIG_PATH = Path.home() / ".claude" / "local-dependency-resolver-config.json"
 DEFAULT_ROOTS = [
     str(Path.home() / "projects"),
     str(Path.home() / "Documents" / "Projects"),
@@ -156,7 +158,7 @@ def render_markdown(projects: list[dict[str, Optional[str]]], active_roots: list
         f"> python {script_path}",
         "> ```",
         "> The script overwrites this file on each run.",
-        "> To configure which roots are scanned, edit `paths.config.json` in this directory.",
+        "> To configure which roots are scanned, edit `~/.claude/local-dependency-resolver-config.json`.",
         "",
         f"Found **{len(projects)}** Java projects.",
         "",
@@ -180,25 +182,28 @@ def main() -> None:
     """Parse CLI arguments, collect projects, render the table, and write the output file."""
     script_path = os.path.abspath(__file__)
     script_dir = os.path.dirname(script_path)
-    config_path = os.path.join(script_dir, CONFIG_FILENAME)
     default_output = os.path.join(script_dir, "local-dependencies.md")
 
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument(
         "--config",
         default=None,
-        help="Path to paths.config.json. Defaults to the file next to this script.",
+        help="Path to the config file. Defaults to ~/.claude/local-dependency-resolver-config.json, then the file next to this script.",
     )
     parser.add_argument(
         "--root",
         default=None,
-        help="Scan a single directory, overriding paths.config.json for this run.",
+        help="Scan a single directory, overriding the configured roots for this run.",
     )
     parser.add_argument("--output", default=default_output, help="Output markdown file (overwritten each run)")
     args = parser.parse_args()
 
     if args.config is not None:
         config_path = str(Path(os.path.expandvars(args.config)).expanduser())
+    elif USER_CONFIG_PATH.exists():
+        config_path = str(USER_CONFIG_PATH)
+    else:
+        config_path = os.path.join(script_dir, CONFIG_FILENAME)
 
     roots = load_roots(config_path)
 

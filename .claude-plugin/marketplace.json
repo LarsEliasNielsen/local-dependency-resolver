@@ -8,7 +8,7 @@
     {
       "name": "local-dependency-resolver",
       "source": "./plugins/local-dependency-resolver",
-      "description": "Resolves Maven dependencies (groupId/artifactId) to local source checkouts. Scans one or more project roots configured in paths.config.json (defaults to ~/projects and ~/Documents/Projects) so Claude can read and edit dependency code directly instead of inspecting JARs."
+      "description": "Resolves Maven dependencies (groupId/artifactId) to local source checkouts. Scans project roots configured in ~/.claude/local-dependency-resolver-config.json so Claude can read and edit dependency code directly instead of inspecting JARs."
     }
   ]
 }

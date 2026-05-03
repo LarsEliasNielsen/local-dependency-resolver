@@ -6,14 +6,17 @@ description: "Maven projects only. Use when a task requires reading or modifying
 # Resolve Local Maven Dependency
 
 The user keeps Java project checkouts under one or more **project roots**.
-Roots are configured in `paths.config.json` in the marketplace plugin directory.
-To add or remove paths, edit:
+Roots are configured in a stable user-level config file.
+To add or remove paths, create or edit:
 
 ```
-~/.claude/plugins/marketplaces/local-dependency-resolver/plugins/local-dependency-resolver/skills/resolve-local-maven-dependency/paths.config.json
+~/.claude/local-dependency-resolver-config.json
 ```
 
-The defaults cover both Windows and Unix/Mac:
+If the file does not exist, the script falls back to these built-in defaults:
+`~/projects` and `~/Documents/Projects`.
+
+A minimal config looks like:
 
 ```json
 {
@@ -27,14 +30,6 @@ The defaults cover both Windows and Unix/Mac:
 Paths support `~` (home directory) and environment variables (e.g.
 `%USERPROFILE%` on Windows, `$HOME` on Unix). Missing paths are silently
 skipped at generation time.
-
-> **Why the marketplace path?** When Claude Code installs a plugin from the
-> marketplace it keeps two copies: a user-editable source under
-> `~/.claude/plugins/marketplaces/` and a processed cache under
-> `~/.claude/plugins/cache/`. The generator script runs from the cache, so
-> without an explicit `--config` the script would silently read the cached copy
-> of `paths.config.json` rather than the one the user edits. Passing the
-> marketplace path via `--config` fixes this.
 
 When a task in one project references a Maven dependency, that dependency's
 source code may be available locally as a folder under one of the configured
@@ -55,13 +50,11 @@ can be read and edited directly.
 
    To regenerate, run the `generate-local-dependency-resolver.py` script
    that lives next to this `SKILL.md`. Resolve its absolute path from the
-   skill's installation directory and invoke it with `python`, passing the
-   marketplace config path explicitly so the script reads the user-editable
-   copy rather than the cached one:
+   skill's installation directory and invoke it with `python`:
    ```
-   python "<this-skill-dir>/generate-local-dependency-resolver.py" --config "~/.claude/plugins/marketplaces/local-dependency-resolver/plugins/local-dependency-resolver/skills/resolve-local-maven-dependency/paths.config.json"
+   python "<this-skill-dir>/generate-local-dependency-resolver.py"
    ```
-   The script reads `paths.config.json` for roots, reparses every top-level
+   The script reads `~/.claude/local-dependency-resolver-config.json` for roots, reparses every top-level
    `pom.xml` in each root's immediate subdirectories, reads each folder's
    `git remote.origin.url`, and overwrites `local-dependencies.md`.
 
